@@ -1194,123 +1194,101 @@ function VibeTalk() {
                 </Box>
               )}
 
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, p: 1 }}>
-                {messages.reduce((acc, msg, index) => {
+       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, p: 1 }}>
+  {Array.isArray(messages) && messages.reduce((acc, msg, index) => {
+    if (!msg) return acc; // skip undefined messages
 
-                  // console.log("msg",msg)
-                  const isMe = String(msg.from?._id || msg.from) === String(loggedInUserId);
-                  const currentMsgDate = new Date(msg.createdAt).toDateString();
-                  const prevMsgDate = index > 0 ? new Date(messages[index - 1].createdAt).toDateString() : null;
+    const isMe = String(msg.from?._id ?? msg.from) === String(loggedInUserId);
 
-                  // Add date separator if new day
-                  if (currentMsgDate !== prevMsgDate) {
-                    acc.push(
-                      <Box key={`date-${msg._id}`} sx={{ display: 'flex', justifyContent: 'center', my: 2 }}>
-                        <Typography 
-                          variant="caption" 
-                          sx={{ 
-                            bgcolor: alpha(theme.palette.text.primary, 0.05),
-                            color: 'text.secondary',
-                            px: 2, 
-                            py: 0.5, 
-                            borderRadius: 2,
-                            fontSize: '0.75rem'
-                          }}
-                        >
-                          {isToday(new Date(currentMsgDate)) ? 'TODAY' : 
-                           isYesterday(new Date(currentMsgDate)) ? 'YESTERDAY' : 
-                           format(new Date(currentMsgDate), 'dd/MM/yyyy')}
-                        </Typography>
-                      </Box>
-                    );
-                  }
+    const currentMsgDate = msg.createdAt ? new Date(msg.createdAt).toDateString() : null;
+    const prevMsgDate = index > 0 && messages[index - 1]?.createdAt
+      ? new Date(messages[index - 1].createdAt).toDateString()
+      : null;
 
-                  // Push the message bubble
-                  acc.push(
-                    <Box
-                      key={msg._id}
-                      sx={{
-                        display: 'flex',
-                        justifyContent: isMe ? 'flex-end' : 'flex-start',
-                        mb: 0.5,
-                      }}
-                    >
-                      <MessageBubble isMe={isMe} elevation={0}>
-                        <Typography
-                          variant="body2"
-                          sx={{
-                            whiteSpace: 'pre-wrap',
-                            wordBreak: 'break-word',
-                            mb: 0.5,
-                            lineHeight: 1.4,
-                          }}
-                        >
-                          {msg.content}
-                        </Typography>
+    // Add date separator if new day
+    if (currentMsgDate && currentMsgDate !== prevMsgDate) {
+      acc.push(
+        <Box key={`date-${msg._id ?? index}`} sx={{ display: 'flex', justifyContent: 'center', my: 2 }}>
+          <Typography 
+            variant="caption" 
+            sx={{ 
+              bgcolor: alpha(theme.palette.text.primary, 0.05),
+              color: 'text.secondary',
+              px: 2, py: 0.5, borderRadius: 2,
+              fontSize: '0.75rem'
+            }}
+          >
+            {currentMsgDate
+              ? (isToday(new Date(currentMsgDate)) ? 'TODAY'
+                 : isYesterday(new Date(currentMsgDate)) ? 'YESTERDAY'
+                 : format(new Date(currentMsgDate), 'dd/MM/yyyy'))
+              : 'Unknown Date'}
+          </Typography>
+        </Box>
+      );
+    }
 
-                        <Box
-                          sx={{
-                            display: 'flex',
-                            justifyContent: 'flex-end',
-                            alignItems: 'center',
-                            gap: 0.5,
-                            mt: 0.5,
-                          }}
-                        >
-                          <Typography 
-                            variant="caption" 
-                            sx={{ 
-                              color: isMe ? alpha(theme.palette.chat.myBubbleText, 0.7) : 'text.hint',
-                              fontSize: '0.6875rem'
-                            }}
-                          >
-                            {formatTime(msg.createdAt)}
-                          </Typography>
+    // Push the message bubble
+    acc.push(
+      <Box
+        key={msg._id ?? index}
+        sx={{
+          display: 'flex',
+          justifyContent: isMe ? 'flex-end' : 'flex-start',
+          mb: 0.5,
+        }}
+      >
+        <MessageBubble isMe={isMe} elevation={0}>
+          <Typography
+            variant="body2"
+            sx={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', mb: 0.5, lineHeight: 1.4 }}
+          >
+            {msg.content ?? ''}
+          </Typography>
 
-                          {isMe && (
-                            <>
-                              {msg.read ? (
-                                <DoneAllIcon sx={{ 
-                                  fontSize: 16, 
-                                  color: theme.palette.status.online,
-                                  opacity: 0.8 
-                                }} />
-                              ) : msg.delivered ? (
-                                <DoneAllIcon sx={{ 
-                                  fontSize: 16, 
-                                  color: alpha(theme.palette.chat.myBubbleText, 0.6)
-                                }} />
-                              ) : (
-                                <DoneIcon sx={{ 
-                                  fontSize: 16, 
-                                  color: alpha(theme.palette.chat.myBubbleText, 0.6)
-                                }} />
-                              )}
-                            </>
-                          )}
-                        </Box>
-                      </MessageBubble>
-                    </Box>
-                  );
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
+            <Typography 
+              variant="caption" 
+              sx={{ color: isMe ? alpha(theme.palette.chat.myBubbleText, 0.7) : 'text.hint', fontSize: '0.6875rem' }}
+            >
+              {msg.createdAt ? formatTime(msg.createdAt) : ''}
+            </Typography>
 
-                  return acc;
-                }, [])}
-
-                {/* Typing Indicator */}
-                {typingUsers.size > 0 && (
-                  <Fade in timeout={200}>
-                    <Box sx={{ display: 'flex', justifyContent: 'flex-start', mb: 1 }}>
-                      <TypingIndicator>
-                        <div className="dot" />
-                        <div className="dot" />
-                        <div className="dot" />
-                      </TypingIndicator>
-                    </Box>
-                  </Fade>
+            {isMe && (
+              <>
+                {msg.read ? (
+                  <DoneAllIcon sx={{ fontSize: 16, color: theme.palette.status.online, opacity: 0.8 }} />
+                ) : msg.delivered ? (
+                  <DoneAllIcon sx={{ fontSize: 16, color: alpha(theme.palette.chat.myBubbleText, 0.6) }} />
+                ) : (
+                  <DoneIcon sx={{ fontSize: 16, color: alpha(theme.palette.chat.myBubbleText, 0.6) }} />
                 )}
+              </>
+            )}
+          </Box>
+        </MessageBubble>
+      </Box>
+    );
 
-                <div ref={messagesEndRef} />
-              </Box>
+    return acc;
+  }, [])}
+
+  {/* Typing Indicator */}
+  {typingUsers.size > 0 && (
+    <Fade in timeout={200}>
+      <Box sx={{ display: 'flex', justifyContent: 'flex-start', mb: 1 }}>
+        <TypingIndicator>
+          <div className="dot" />
+          <div className="dot" />
+          <div className="dot" />
+        </TypingIndicator>
+      </Box>
+    </Fade>
+  )}
+
+  <div ref={messagesEndRef} />
+</Box>
+
             </MessagesContainer>
 
             {/* Message Input */}
