@@ -138,14 +138,14 @@ export const useChatSocket = (serverUrl, token, loggedInUserId, selectedUser) =>
         setUsers(prev => 
           prev.map(user => ({
             ...user,
-            online: onlineUserIds.map(String).includes(user._id.toString()),
+            online: onlineUserIds.map(String).includes(user._id?.toString()),
           }))
         );
 
         if (setSelectedUser) {
           setSelectedUser(prev => {
             if (!prev) return prev;
-            const isOnline = onlineUserIds.map(String).includes(prev._id.toString());
+            const isOnline = onlineUserIds.map(String).includes(prev._id?.toString());
             return prev.online !== isOnline ? { ...prev, online: isOnline } : prev;
           });
         }
@@ -156,7 +156,7 @@ export const useChatSocket = (serverUrl, token, loggedInUserId, selectedUser) =>
         console.log("messageId",messageId)
         setMessages(prev => 
           prev.map(msg =>
-            msg._id.toString() === messageId?.id.toString() 
+            msg._id?.toString() === messageId?.id?.toString() 
               ? { ...msg, delivered: true } 
               : msg
           )
@@ -167,7 +167,7 @@ export const useChatSocket = (serverUrl, token, loggedInUserId, selectedUser) =>
       onMessageRead: (messageId) => {
         setMessages(prev =>
           prev.map(msg => 
-            msg._id.toString() === messageId.toString() 
+            msg._id?.toString() === messageId?.toString() 
               ? { ...msg, read: true } 
               : msg
           )
@@ -178,7 +178,7 @@ export const useChatSocket = (serverUrl, token, loggedInUserId, selectedUser) =>
       onMessageDeleted: (deletedMsg) => {
         setMessages(prev =>
           prev.map(msg =>
-            msg._id.toString() === deletedMsg._id.toString()
+            msg._id?.toString() === deletedMsg._id?.toString()
               ? { ...msg, deleteForEveryone: true }
               : msg
           )
@@ -188,7 +188,7 @@ export const useChatSocket = (serverUrl, token, loggedInUserId, selectedUser) =>
       // Handle message deleted for me
       onMessageDeletedForMe: ({ messageId }) => {
         setMessages(prev => 
-          prev.filter(msg => msg._id.toString() !== messageId.toString())
+          prev.filter(msg => msg._id?.toString() !== messageId?.toString())
         );
       }
     });
