@@ -544,17 +544,62 @@ function VibeTalk() {
   const typingTimeoutRef = useRef(null);
 
   // Setup socket event handlers
-  useEffect(() => {
-    if (!loggedInUserId) return;
+  // useEffect(() => {
+  //   if (!loggedInUserId) return;
 
-    socket.setupChatHandlers({
-      setMessages,
-      setUsers,
-      users,
-      setSelectedUser,
-      setTypingUsers
+  //   socket.setupChatHandlers({
+  //     setMessages,
+  //     setUsers,
+  //     users,
+  //     setSelectedUser,
+  //     setTypingUsers
+  //   });
+  // }, [loggedInUserId, selectedUser, socket]);
+
+
+
+// Replace your existing socket setup useEffect with this:
+useEffect(() => {
+  if (!loggedInUserId) return;
+
+  const handleIncomingMessage = (message) => {
+    setMessages(prev => {
+      // Check if this message already exists
+      const exists = prev.some(msg => 
+        msg._id === message._id || 
+        (msg.content === message.content && 
+         msg.from === message.from && 
+         msg.to === message.to &&
+         Math.abs(new Date(msg.createdAt).getTime() - new Date(message.createdAt).getTime()) < 2000)
+      );
+
+      if (exists) return prev;
+
+      const newMessages = [...prev, message];
+      return deduplicateMessages(newMessages);
     });
-  }, [loggedInUserId, selectedUser, socket]);
+  };
+
+  const handleMessageUpdate = (updatedMessage) => {
+    setMessages(prev => 
+      prev.map(msg => 
+        msg._id === updatedMessage._id 
+          ? { ...msg, ...updatedMessage }
+          : msg
+      )
+    );
+  };
+
+  socket.setupChatHandlers({
+    setMessages: handleIncomingMessage, // Use the wrapper function
+    setUsers,
+    users,
+    setSelectedUser,
+    setTypingUsers,
+    onMessageUpdate: handleMessageUpdate
+  });
+}, [loggedInUserId, selectedUser, socket]);
+
 
   // Handle user selection
   const handleSelectUser = (userId) => {
@@ -586,34 +631,104 @@ function VibeTalk() {
   }, [token]);
 
   // Fetch messages when user is selected
-  useEffect(() => {
-    if (!selectedUser || !loggedInUserId) {
-      setMessages([]);
-      return;
+  // useEffect(() => {
+  //   if (!selectedUser || !loggedInUserId) {
+  //     setMessages([]);
+  //     return;
+  //   }
+
+  //   const fetchMessages = async () => {
+  //     try {
+  //       const res = await fetch(
+  //         `https://vibe-talk-chat-app.onrender.com/api/messages/${loggedInUserId}/${selectedUser._id}`,
+  //         { headers: { Authorization: `Bearer ${token}` } }
+  //       );
+  //       const data = await res.json();
+  //       // console.log("data",data)
+  //       setMessages(
+  //         data?.map(msg => ({
+  //           ...msg,
+  //           delivered: msg.delivered ?? false,
+  //           read: msg.read ?? false,
+  //         }))
+  //       );
+  //     } catch (err) {
+  //       console.error(err);
+  //     }
+  //   };
+
+  //   fetchMessages();
+  // }, [selectedUser, loggedInUserId, token]);
+
+
+
+// Replace your existing message fetching useEffect with this:
+useEffect(() => {
+  if (!selectedUser || !loggedInUserId) {
+    setMessages([]);
+    return;
+  }
+
+  const fetchMessages = async () => {
+    setLoadingMessages(true);
+    setErrorMessages(null);
+    try {
+      const res = await fetch(
+        `https://vibe-talk-chat-app.onrender.com/api/messages/${loggedInUserId}/${selectedUser._id}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      const data = await res.json();
+      
+      // Only set messages from API, don't append to existing
+      const fetchedMessages = data?.map(msg => ({
+        ...msg,
+        delivered: msg.delivered ?? false,
+        read: msg.read ?? false,
+        temp: false, // Mark as permanent messages from server
+      })) || [];
+      
+      setMessages(fetchedMessages);
+    } catch (err) {
+      console.error("Error fetching messages:", err);
+      setErrorMessages("Failed to load messages");
+    } finally {
+      setLoadingMessages(false);
     }
+  };
 
-    const fetchMessages = async () => {
-      try {
-        const res = await fetch(
-          `https://vibe-talk-chat-app.onrender.com/api/messages/${loggedInUserId}/${selectedUser._id}`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        const data = await res.json();
-        // console.log("data",data)
-        setMessages(
-          data?.map(msg => ({
-            ...msg,
-            delivered: msg.delivered ?? false,
-            read: msg.read ?? false,
-          }))
-        );
-      } catch (err) {
-        console.error(err);
-      }
-    };
+  fetchMessages();
+}, [selectedUser, loggedInUserId, token]); // Remove messages from dependencies!
 
-    fetchMessages();
-  }, [selectedUser, loggedInUserId, token]);
+
+
+
+// Add this function inside your VibeTalk component, before the useEffects
+const deduplicateMessages = (messageArray) => {
+  const seen = new Map();
+  return messageArray.filter(msg => {
+    // Create a unique key for each message
+    const key = msg._id || `${msg.from}-${msg.to}-${msg.content}-${msg.createdAt}`;
+    
+    if (seen.has(key)) return false;
+    
+    // For duplicate content, keep the non-temp message
+    const contentKey = `${msg.from}-${msg.to}-${msg.content}`;
+    const existingMsg = seen.get(contentKey);
+    
+    if (existingMsg && !msg.temp && existingMsg.temp) {
+      // Replace temp message with permanent one
+      seen.delete(existingMsg.key);
+      seen.set(key, { ...msg, key });
+      return true;
+    } else if (existingMsg && msg.temp && !existingMsg.temp) {
+      // Keep existing permanent message
+      return false;
+    }
+    
+    seen.set(key, { ...msg, key });
+    return true;
+  });
+};
 
   // Mark messages as read
   useEffect(() => {
@@ -779,25 +894,67 @@ function VibeTalk() {
   };
 
   // Send message
-  const handleSend = () => {
-    if (!text.trim() || !selectedUser) return;
+  // const handleSend = () => {
+  //   if (!text.trim() || !selectedUser) return;
 
-    const tempId = Date.now()?.toString();
-    const message = {
-      _id: tempId,
-      from: loggedInUserId,
-      to: selectedUser._id,
-      content: text.trim(),
-      createdAt: new Date().toISOString(),
-      delivered: false,
-      read: false,
-      temp: true,
-    };
+  //   const tempId = Date.now()?.toString();
+  //   const message = {
+  //     _id: tempId,
+  //     from: loggedInUserId,
+  //     to: selectedUser._id,
+  //     content: text.trim(),
+  //     createdAt: new Date().toISOString(),
+  //     delivered: false,
+  //     read: false,
+  //     temp: true,
+  //   };
 
-    setMessages(prev => [...prev, message]);
-    socket.sendMessage(message);
-    setText("");
+  //   setMessages(prev => [...prev, message]);
+  //   socket.sendMessage(message);
+  //   setText("");
+  // };
+
+
+// Replace your existing handleSend function with this:
+const handleSend = () => {
+  if (!text.trim() || !selectedUser) return;
+
+  const tempId = `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  const message = {
+    _id: tempId,
+    from: loggedInUserId,
+    to: selectedUser._id,
+    content: text.trim(),
+    createdAt: new Date().toISOString(),
+    delivered: false,
+    read: false,
+    temp: true, // Mark as temporary
   };
+
+  // Add message optimistically (immediate UI update)
+  setMessages(prev => {
+    const newMessages = [...prev, message];
+    return deduplicateMessages(newMessages);
+  });
+
+  // Send via socket
+  socket.sendMessage(message);
+  
+  // Clear input
+  setText("");
+
+  // Optional: Handle potential send failures
+  setTimeout(() => {
+    setMessages(prev => 
+      prev.map(msg => 
+        msg._id === tempId && msg.temp
+          ? { ...msg, delivered: true } // Mark as delivered after timeout
+          : msg
+      )
+    );
+  }, 3000); // 3 second timeout
+};
+
 
   // Handle typing
   const handleTextChange = (e) => {
