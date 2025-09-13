@@ -179,7 +179,8 @@ export default function AuthLogin({ isDemo = false }) {
               <Grid item xs={12}>
                 <Typography
                   component={Link}
-                  to="/register"
+                  // to="/register"
+                  onClick={() => navigate("/register")}
                   variant="body1"
                   sx={{ textDecoration: 'none', display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer' }}
                   color="#3a186e"
