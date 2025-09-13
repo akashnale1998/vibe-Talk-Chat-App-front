@@ -478,7 +478,7 @@ function WhatsAppChatInner() {
   const handleSend = () => {
     if (!text.trim() || !selectedUser) return;
 
-    const tempId = Date.now().toString();
+    const tempId = Date.now()?.toString();
     const message = {
       _id: tempId,
       from: loggedInUserId,

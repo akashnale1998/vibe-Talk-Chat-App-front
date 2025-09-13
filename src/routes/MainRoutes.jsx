@@ -130,56 +130,56 @@ import YouTubeClone from "pages/dashboard/YouTube";
 const ECommerce = Loadable(lazy(() => import("pages/dashboard/e-commerce")));
 
 const MainRoutes = {
-  path: "/",
+  path: "/vibeTalk",
   children: [
-    {
-      path: "/",
-      element: (
-        <ProtectedRoute>
-          <ChatCommunication />
-        </ProtectedRoute>
-      ),
-    },
-    {
-      path: "/ecommerce",
-      element: (
-        <ProtectedRoute>
-          <ECommerce />
-        </ProtectedRoute>
-      ),
-    },
-    {
-      path: "/instagram",
-      element: (
-        <ProtectedRoute>
-          <InstagramClone />
-        </ProtectedRoute>
-      ),
-    },
-     {
-      path: "/adminNotification",
-      element: (
-        <ProtectedRoute>
-          <AdminNotification />
-        </ProtectedRoute>
-      ),
-    },
-    {
-      path: "/showNotification",
-      element: (
-        <ProtectedRoute>
-          <ShowNotification />
-        </ProtectedRoute>
-      ),
-    },
-    {
-      path: "/portfolio",
-      element: (
-        <ProtectedRoute>
-          <Portfolio />
-        </ProtectedRoute>
-      ),
-    },
+    // {
+    //   path: "/",
+    //   element: (
+    //     <ProtectedRoute>
+    //       <ChatCommunication />
+    //     </ProtectedRoute>
+    //   ),
+    // },
+    // {
+    //   path: "/ecommerce",
+    //   element: (
+    //     <ProtectedRoute>
+    //       <ECommerce />
+    //     </ProtectedRoute>
+    //   ),
+    // },
+    // {
+    //   path: "/instagram",
+    //   element: (
+    //     <ProtectedRoute>
+    //       <InstagramClone />
+    //     </ProtectedRoute>
+    //   ),
+    // },
+    //  {
+    //   path: "/adminNotification",
+    //   element: (
+    //     <ProtectedRoute>
+    //       <AdminNotification />
+    //     </ProtectedRoute>
+    //   ),
+    // },
+    // {
+    //   path: "/showNotification",
+    //   element: (
+    //     <ProtectedRoute>
+    //       <ShowNotification />
+    //     </ProtectedRoute>
+    //   ),
+    // },
+    // {
+    //   path: "/portfolio",
+    //   element: (
+    //     <ProtectedRoute>
+    //       <Portfolio />
+    //     </ProtectedRoute>
+    //   ),
+    // },
      {
       path: "/vibeTalk",
       element: (
@@ -188,14 +188,14 @@ const MainRoutes = {
         </ProtectedRoute>
       ),
     },
-    {
-      path: "/youtube",
-      element: (
-        <ProtectedRoute>
-          <YouTubeClone />
-        </ProtectedRoute>
-      ),
-    },
+    // {
+    //   path: "/youtube",
+    //   element: (
+    //     <ProtectedRoute>
+    //       <YouTubeClone />
+    //     </ProtectedRoute>
+    //   ),
+    // },
   ],
 };
 
