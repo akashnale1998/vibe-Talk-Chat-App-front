@@ -74,7 +74,6 @@ import {
 import { styled, keyframes } from "@mui/material/styles";
 import { useChatSocket } from "pages/socketService/useSocket";
 import Picker from "emoji-picker-react";
-import { useNavigate } from "react-router";
 
 // ============== THEME ENHANCEMENT START ==============
 const ThemeContext = createContext();
@@ -547,62 +546,17 @@ function VibeTalk() {
   const typingTimeoutRef = useRef(null);
 
   // Setup socket event handlers
-  // useEffect(() => {
-  //   if (!loggedInUserId) return;
+  useEffect(() => {
+    if (!loggedInUserId) return;
 
-  //   socket.setupChatHandlers({
-  //     setMessages,
-  //     setUsers,
-  //     users,
-  //     setSelectedUser,
-  //     setTypingUsers
-  //   });
-  // }, [loggedInUserId, selectedUser, socket]);
-
-
-
-// Replace your existing socket setup useEffect with this:
-useEffect(() => {
-  if (!loggedInUserId) return;
-
-  const handleIncomingMessage = (message) => {
-    setMessages(prev => {
-      // Check if this message already exists
-      const exists = prev.some(msg => 
-        msg._id === message._id || 
-        (msg.content === message.content && 
-         msg.from === message.from && 
-         msg.to === message.to &&
-         Math.abs(new Date(msg.createdAt).getTime() - new Date(message.createdAt).getTime()) < 2000)
-      );
-
-      if (exists) return prev;
-
-      const newMessages = [...prev, message];
-      return deduplicateMessages(newMessages);
+    socket.setupChatHandlers({
+      setMessages,
+      setUsers,
+      users,
+      setSelectedUser,
+      setTypingUsers
     });
-  };
-
-  const handleMessageUpdate = (updatedMessage) => {
-    setMessages(prev => 
-      prev.map(msg => 
-        msg._id === updatedMessage._id 
-          ? { ...msg, ...updatedMessage }
-          : msg
-      )
-    );
-  };
-
-  socket.setupChatHandlers({
-    setMessages: handleIncomingMessage, // Use the wrapper function
-    setUsers,
-    users,
-    setSelectedUser,
-    setTypingUsers,
-    onMessageUpdate: handleMessageUpdate
-  });
-}, [loggedInUserId, selectedUser, socket]);
-
+  }, [loggedInUserId, selectedUser, socket]);
 
   // Handle user selection
   const handleSelectUser = (userId) => {
@@ -634,104 +588,34 @@ useEffect(() => {
   }, [token]);
 
   // Fetch messages when user is selected
-  // useEffect(() => {
-  //   if (!selectedUser || !loggedInUserId) {
-  //     setMessages([]);
-  //     return;
-  //   }
-
-  //   const fetchMessages = async () => {
-  //     try {
-  //       const res = await fetch(
-  //         `https://vibe-talk-chat-app.onrender.com/api/messages/${loggedInUserId}/${selectedUser._id}`,
-  //         { headers: { Authorization: `Bearer ${token}` } }
-  //       );
-  //       const data = await res.json();
-  //       // console.log("data",data)
-  //       setMessages(
-  //         data?.map(msg => ({
-  //           ...msg,
-  //           delivered: msg.delivered ?? false,
-  //           read: msg.read ?? false,
-  //         }))
-  //       );
-  //     } catch (err) {
-  //       console.error(err);
-  //     }
-  //   };
-
-  //   fetchMessages();
-  // }, [selectedUser, loggedInUserId, token]);
-
-
-
-// Replace your existing message fetching useEffect with this:
-useEffect(() => {
-  if (!selectedUser || !loggedInUserId) {
-    setMessages([]);
-    return;
-  }
-
-  const fetchMessages = async () => {
-    setLoadingMessages(true);
-    setErrorMessages(null);
-    try {
-      const res = await fetch(
-        `https://vibe-talk-chat-app.onrender.com/api/messages/${loggedInUserId}/${selectedUser._id}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      const data = await res.json();
-      
-      // Only set messages from API, don't append to existing
-      const fetchedMessages = data?.map(msg => ({
-        ...msg,
-        delivered: msg.delivered ?? false,
-        read: msg.read ?? false,
-        temp: false, // Mark as permanent messages from server
-      })) || [];
-      
-      setMessages(fetchedMessages);
-    } catch (err) {
-      console.error("Error fetching messages:", err);
-      setErrorMessages("Failed to load messages");
-    } finally {
-      setLoadingMessages(false);
+  useEffect(() => {
+    if (!selectedUser || !loggedInUserId) {
+      setMessages([]);
+      return;
     }
-  };
 
-  fetchMessages();
-}, [selectedUser, loggedInUserId, token]); // Remove messages from dependencies!
+    const fetchMessages = async () => {
+      try {
+        const res = await fetch(
+          `https://vibe-talk-chat-app.onrender.com/api/messages/${loggedInUserId}/${selectedUser._id}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        const data = await res.json();
+        // console.log("data",data)
+        setMessages(
+          data?.map(msg => ({
+            ...msg,
+            delivered: msg.delivered ?? false,
+            read: msg.read ?? false,
+          }))
+        );
+      } catch (err) {
+        console.error(err);
+      }
+    };
 
-
-
-
-// Add this function inside your VibeTalk component, before the useEffects
-const deduplicateMessages = (messageArray) => {
-  const seen = new Map();
-  return messageArray.filter(msg => {
-    // Create a unique key for each message
-    const key = msg._id || `${msg.from}-${msg.to}-${msg.content}-${msg.createdAt}`;
-    
-    if (seen.has(key)) return false;
-    
-    // For duplicate content, keep the non-temp message
-    const contentKey = `${msg.from}-${msg.to}-${msg.content}`;
-    const existingMsg = seen.get(contentKey);
-    
-    if (existingMsg && !msg.temp && existingMsg.temp) {
-      // Replace temp message with permanent one
-      seen.delete(existingMsg.key);
-      seen.set(key, { ...msg, key });
-      return true;
-    } else if (existingMsg && msg.temp && !existingMsg.temp) {
-      // Keep existing permanent message
-      return false;
-    }
-    
-    seen.set(key, { ...msg, key });
-    return true;
-  });
-};
+    fetchMessages();
+  }, [selectedUser, loggedInUserId, token]);
 
   // Mark messages as read
   useEffect(() => {
@@ -897,67 +781,25 @@ const deduplicateMessages = (messageArray) => {
   };
 
   // Send message
-  // const handleSend = () => {
-  //   if (!text.trim() || !selectedUser) return;
+  const handleSend = () => {
+    if (!text.trim() || !selectedUser) return;
 
-  //   const tempId = Date.now()?.toString();
-  //   const message = {
-  //     _id: tempId,
-  //     from: loggedInUserId,
-  //     to: selectedUser._id,
-  //     content: text.trim(),
-  //     createdAt: new Date().toISOString(),
-  //     delivered: false,
-  //     read: false,
-  //     temp: true,
-  //   };
+    const tempId = Date.now()?.toString();
+    const message = {
+      _id: tempId,
+      from: loggedInUserId,
+      to: selectedUser._id,
+      content: text.trim(),
+      createdAt: new Date().toISOString(),
+      delivered: false,
+      read: false,
+      temp: true,
+    };
 
-  //   setMessages(prev => [...prev, message]);
-  //   socket.sendMessage(message);
-  //   setText("");
-  // };
-
-
-// Replace your existing handleSend function with this:
-const handleSend = () => {
-  if (!text.trim() || !selectedUser) return;
-
-  const tempId = `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-  const message = {
-    _id: tempId,
-    from: loggedInUserId,
-    to: selectedUser._id,
-    content: text.trim(),
-    createdAt: new Date().toISOString(),
-    delivered: false,
-    read: false,
-    temp: true, // Mark as temporary
+    setMessages(prev => [...prev, message]);
+    socket.sendMessage(message);
+    setText("");
   };
-
-  // Add message optimistically (immediate UI update)
-  setMessages(prev => {
-    const newMessages = [...prev, message];
-    return deduplicateMessages(newMessages);
-  });
-
-  // Send via socket
-  socket.sendMessage(message);
-  
-  // Clear input
-  setText("");
-
-  // Optional: Handle potential send failures
-  setTimeout(() => {
-    setMessages(prev => 
-      prev.map(msg => 
-        msg._id === tempId && msg.temp
-          ? { ...msg, delivered: true } // Mark as delivered after timeout
-          : msg
-      )
-    );
-  }, 3000); // 3 second timeout
-};
-
 
   // Handle typing
   const handleTextChange = (e) => {
@@ -1028,6 +870,7 @@ const handleSend = () => {
   const onEmojiClick = (emojiData) => {
     setText((prev) => prev + emojiData.emoji);
   };
+
 const navigate=useNavigate();
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -1223,7 +1066,8 @@ const navigate=useNavigate();
           <SettingsIcon sx={{ mr: 1, fontSize: '1.25rem' }} />
           Settings
         </MenuItem>
-        <MenuItem
+
+          <MenuItem
     onClick={() => {
       handleMenuClose();
       handleLogout(); // your custom logout function
@@ -1363,101 +1207,123 @@ const navigate=useNavigate();
                 </Box>
               )}
 
-       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, p: 1 }}>
-  {Array.isArray(messages) && messages.reduce((acc, msg, index) => {
-    if (!msg) return acc; // skip undefined messages
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, p: 1 }}>
+                {messages.reduce((acc, msg, index) => {
 
-    const isMe = String(msg.from?._id ?? msg.from) === String(loggedInUserId);
+                  // console.log("msg",msg)
+                  const isMe = String(msg.from?._id || msg.from) === String(loggedInUserId);
+                  const currentMsgDate = new Date(msg.createdAt).toDateString();
+                  const prevMsgDate = index > 0 ? new Date(messages[index - 1].createdAt).toDateString() : null;
 
-    const currentMsgDate = msg.createdAt ? new Date(msg.createdAt).toDateString() : null;
-    const prevMsgDate = index > 0 && messages[index - 1]?.createdAt
-      ? new Date(messages[index - 1].createdAt).toDateString()
-      : null;
+                  // Add date separator if new day
+                  if (currentMsgDate !== prevMsgDate) {
+                    acc.push(
+                      <Box key={`date-${msg._id}`} sx={{ display: 'flex', justifyContent: 'center', my: 2 }}>
+                        <Typography 
+                          variant="caption" 
+                          sx={{ 
+                            bgcolor: alpha(theme.palette.text.primary, 0.05),
+                            color: 'text.secondary',
+                            px: 2, 
+                            py: 0.5, 
+                            borderRadius: 2,
+                            fontSize: '0.75rem'
+                          }}
+                        >
+                          {isToday(new Date(currentMsgDate)) ? 'TODAY' : 
+                           isYesterday(new Date(currentMsgDate)) ? 'YESTERDAY' : 
+                           format(new Date(currentMsgDate), 'dd/MM/yyyy')}
+                        </Typography>
+                      </Box>
+                    );
+                  }
 
-    // Add date separator if new day
-    if (currentMsgDate && currentMsgDate !== prevMsgDate) {
-      acc.push(
-        <Box key={`date-${msg._id ?? index}`} sx={{ display: 'flex', justifyContent: 'center', my: 2 }}>
-          <Typography 
-            variant="caption" 
-            sx={{ 
-              bgcolor: alpha(theme.palette.text.primary, 0.05),
-              color: 'text.secondary',
-              px: 2, py: 0.5, borderRadius: 2,
-              fontSize: '0.75rem'
-            }}
-          >
-            {currentMsgDate
-              ? (isToday(new Date(currentMsgDate)) ? 'TODAY'
-                 : isYesterday(new Date(currentMsgDate)) ? 'YESTERDAY'
-                 : format(new Date(currentMsgDate), 'dd/MM/yyyy'))
-              : 'Unknown Date'}
-          </Typography>
-        </Box>
-      );
-    }
+                  // Push the message bubble
+                  acc.push(
+                    <Box
+                      key={msg._id}
+                      sx={{
+                        display: 'flex',
+                        justifyContent: isMe ? 'flex-end' : 'flex-start',
+                        mb: 0.5,
+                      }}
+                    >
+                      <MessageBubble isMe={isMe} elevation={0}>
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            whiteSpace: 'pre-wrap',
+                            wordBreak: 'break-word',
+                            mb: 0.5,
+                            lineHeight: 1.4,
+                          }}
+                        >
+                          {msg.content}
+                        </Typography>
 
-    // Push the message bubble
-    acc.push(
-      <Box
-        key={msg._id ?? index}
-        sx={{
-          display: 'flex',
-          justifyContent: isMe ? 'flex-end' : 'flex-start',
-          mb: 0.5,
-        }}
-      >
-        <MessageBubble isMe={isMe} elevation={0}>
-          <Typography
-            variant="body2"
-            sx={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', mb: 0.5, lineHeight: 1.4 }}
-          >
-            {msg.content ?? ''}
-          </Typography>
+                        <Box
+                          sx={{
+                            display: 'flex',
+                            justifyContent: 'flex-end',
+                            alignItems: 'center',
+                            gap: 0.5,
+                            mt: 0.5,
+                          }}
+                        >
+                          <Typography 
+                            variant="caption" 
+                            sx={{ 
+                              color: isMe ? alpha(theme.palette.chat.myBubbleText, 0.7) : 'text.hint',
+                              fontSize: '0.6875rem'
+                            }}
+                          >
+                            {formatTime(msg.createdAt)}
+                          </Typography>
 
-          <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
-            <Typography 
-              variant="caption" 
-              sx={{ color: isMe ? alpha(theme.palette.chat.myBubbleText, 0.7) : 'text.hint', fontSize: '0.6875rem' }}
-            >
-              {msg.createdAt ? formatTime(msg.createdAt) : ''}
-            </Typography>
+                          {isMe && (
+                            <>
+                              {msg.read ? (
+                                <DoneAllIcon sx={{ 
+                                  fontSize: 16, 
+                                  color: theme.palette.status.online,
+                                  opacity: 0.8 
+                                }} />
+                              ) : msg.delivered ? (
+                                <DoneAllIcon sx={{ 
+                                  fontSize: 16, 
+                                  color: alpha(theme.palette.chat.myBubbleText, 0.6)
+                                }} />
+                              ) : (
+                                <DoneIcon sx={{ 
+                                  fontSize: 16, 
+                                  color: alpha(theme.palette.chat.myBubbleText, 0.6)
+                                }} />
+                              )}
+                            </>
+                          )}
+                        </Box>
+                      </MessageBubble>
+                    </Box>
+                  );
 
-            {isMe && (
-              <>
-                {msg.read ? (
-                  <DoneAllIcon sx={{ fontSize: 16, color: theme.palette.status.online, opacity: 0.8 }} />
-                ) : msg.delivered ? (
-                  <DoneAllIcon sx={{ fontSize: 16, color: alpha(theme.palette.chat.myBubbleText, 0.6) }} />
-                ) : (
-                  <DoneIcon sx={{ fontSize: 16, color: alpha(theme.palette.chat.myBubbleText, 0.6) }} />
+                  return acc;
+                }, [])}
+
+                {/* Typing Indicator */}
+                {typingUsers.size > 0 && (
+                  <Fade in timeout={200}>
+                    <Box sx={{ display: 'flex', justifyContent: 'flex-start', mb: 1 }}>
+                      <TypingIndicator>
+                        <div className="dot" />
+                        <div className="dot" />
+                        <div className="dot" />
+                      </TypingIndicator>
+                    </Box>
+                  </Fade>
                 )}
-              </>
-            )}
-          </Box>
-        </MessageBubble>
-      </Box>
-    );
 
-    return acc;
-  }, [])}
-
-  {/* Typing Indicator */}
-  {typingUsers.size > 0 && (
-    <Fade in timeout={200}>
-      <Box sx={{ display: 'flex', justifyContent: 'flex-start', mb: 1 }}>
-        <TypingIndicator>
-          <div className="dot" />
-          <div className="dot" />
-          <div className="dot" />
-        </TypingIndicator>
-      </Box>
-    </Fade>
-  )}
-
-  <div ref={messagesEndRef} />
-</Box>
-
+                <div ref={messagesEndRef} />
+              </Box>
             </MessagesContainer>
 
             {/* Message Input */}

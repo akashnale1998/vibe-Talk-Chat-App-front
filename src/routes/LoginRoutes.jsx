@@ -11,14 +11,22 @@ const LoginRoutes = {
   path: "/",
   element: <MinimalLayout />,
   children: [
-    {
-      path: "/login",
+     {
+      path: "/", // 👈 root should load login
       element: (
         <PublicRoute>
           <AuthLogin />
         </PublicRoute>
       ),
     },
+    // {
+    //   path: "/login",
+    //   element: (
+    //     <PublicRoute>
+    //       <AuthLogin />
+    //     </PublicRoute>
+    //   ),
+    // },
     {
       path: "/register",
       element: (
