@@ -74,6 +74,7 @@ import {
 import { styled, keyframes } from "@mui/material/styles";
 import { useChatSocket } from "pages/socketService/useSocket";
 import Picker from "emoji-picker-react";
+import { useNavigate } from "react-router";
 
 // ============== THEME ENHANCEMENT START ==============
 const ThemeContext = createContext();
@@ -1027,7 +1028,7 @@ const handleSend = () => {
   const onEmojiClick = (emojiData) => {
     setText((prev) => prev + emojiData.emoji);
   };
-
+const navigate=useNavigate();
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
