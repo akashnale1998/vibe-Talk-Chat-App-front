@@ -181,12 +181,14 @@ const getTheme = (mode) => {
 const CustomThemeProvider = ({ children }) => {
   const [mode, setMode] = useState(() => {
     // Don't use localStorage in artifacts
-    return 'light';
+    const saved = localStorage.getItem("themeMode");
+    return saved ? saved : "light";
   });
 
   const toggleTheme = () => {
     const newMode = mode === 'light' ? 'dark' : 'light';
     setMode(newMode);
+    localStorage.setItem("themeMode", newMode); // 👈 save in localStorage
   };
 
   const theme = getTheme(mode);
