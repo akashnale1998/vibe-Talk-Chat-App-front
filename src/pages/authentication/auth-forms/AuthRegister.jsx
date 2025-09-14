@@ -38,7 +38,7 @@ export default function AuthRegisterSimple() {
           );
 
           console.log('User registered:', response.data);
-          navigate('/login');
+          navigate('/');
         } catch (error) {
           console.error(error);
           if (error.response?.data?.message) {
@@ -153,7 +153,7 @@ export default function AuthRegisterSimple() {
               <Typography
                 variant="body1"
                 sx={{ textAlign: 'center', mt: 2, cursor: 'pointer', color: '#3a186e' }}
-                onClick={() => navigate('/login')}
+                onClick={() => navigate('/')}
               >
                 Already have an account? Login
               </Typography>
