@@ -1,6 +1,8 @@
 
 import React, { useState, useEffect, useRef, createContext, useContext } from "react";
 import { format, isToday, isYesterday } from 'date-fns';
+import LogoutIcon from '@mui/icons-material/Logout';
+
 import {
   Box,
   Grid,
@@ -1220,6 +1222,15 @@ const handleSend = () => {
           <SettingsIcon sx={{ mr: 1, fontSize: '1.25rem' }} />
           Settings
         </MenuItem>
+        <MenuItem
+    onClick={() => {
+      handleMenuClose();
+      handleLogout(); // your custom logout function
+    }}
+  >
+    <LogoutIcon sx={{ mr: 1, fontSize: '1.25rem' }} />
+    Logout
+  </MenuItem>
       </Menu>
     </ChatListContainer>
   );
