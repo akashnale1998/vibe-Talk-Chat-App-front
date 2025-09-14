@@ -876,7 +876,7 @@ const navigate=useNavigate();
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
-    navigate("/login");
+    navigate("/");
   };
 
   // const usersToShow = filteredUsers !== null ? filteredUsers : users ||[];
